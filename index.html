@@ -5,17 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Credit Matrix Platform</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Include the Supabase JS Client library via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
+    <!-- Auth View Container (Login/Sign up Interface) -->
     <div id="auth-container" class="flex-1 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl max-w-sm w-full space-y-6">
+        <div class="bg-slate-800 border border-slate-700 p-6 sm:p-8 rounded-2xl shadow-xl max-w-sm w-full space-y-6">
             <div class="text-center space-y-2">
                 <h1 class="text-2xl font-bold text-indigo-400 flex items-center justify-center gap-2">
                     <span>📊</span> OmniPay Cloud
@@ -45,44 +47,54 @@
         </div>
     </div>
 
+    <!-- Main Application View Container -->
     <div id="app-container" class="hidden flex-1 flex flex-col">
-        <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 sticky top-0 z-10 shadow-md">
+        <!-- Top Navigation Bar -->
+        <header class="bg-slate-800 border-b border-slate-700 py-4 px-4 sm:px-6 sticky top-0 z-10 shadow-md">
             <div class="max-w-6xl mx-auto flex justify-between items-center">
-                <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">
-                    <span>📊</span> Credit Monitor Engine
+                <h1 class="text-lg sm:text-xl font-bold text-indigo-400 flex items-center gap-2">
+                    <span>📊</span> OmniPay Engine
                 </h1>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3">
                     <span class="text-xs text-slate-400 font-mono hidden md:inline-block" id="user-display-email"></span>
-                    <button onclick="handleLogout()" class="bg-slate-700 hover:bg-rose-900/40 text-slate-200 hover:text-rose-300 text-xs px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer transition">
+                    <button onclick="startNewBillingCycle()" class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 text-xs px-2.5 py-1.5 rounded-lg cursor-pointer transition flex items-center gap-1 font-medium">
+                        🔄 New Month Reset
+                    </button>
+                    <button onclick="handleLogout()" class="bg-slate-700 hover:bg-rose-900/40 text-slate-200 hover:text-rose-300 text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 cursor-pointer transition">
                         Log Out
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+        <!-- Workspace Wrapper -->
+        <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 space-y-6">
             
-            <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
+            <!-- Global Metrics Summary -->
+            <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-slate-800 border border-slate-700 p-4 sm:p-5 rounded-xl shadow-sm">
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Actual Debt</p>
-                    <p class="text-3xl font-mono font-bold text-slate-100 mt-1" id="global-actual">₹0.00</p>
+                    <p class="text-2xl sm:text-3xl font-mono font-bold text-slate-100 mt-1" id="global-actual">₹0.00</p>
                 </div>
-                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
+                <div class="bg-slate-800 border border-slate-700 p-4 sm:p-5 rounded-xl shadow-sm">
                     <p class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Immediate Due Amount</p>
-                    <p class="text-3xl font-mono font-bold text-amber-400 mt-1" id="global-due">₹0.00</p>
+                    <p class="text-2xl sm:text-3xl font-mono font-bold text-amber-400 mt-1" id="global-due">₹0.00</p>
                 </div>
-                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
+                <div class="bg-slate-800 border border-slate-700 p-4 sm:p-5 rounded-xl shadow-sm">
                     <p class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Total Liquidity Pool</p>
-                    <p class="text-3xl font-mono font-bold text-emerald-400 mt-1" id="global-available">₹0.00</p>
+                    <p class="text-2xl sm:text-3xl font-mono font-bold text-emerald-400 mt-1" id="global-available">₹0.00</p>
                 </div>
             </section>
 
+            <!-- Dynamic Master Ledger Section -->
             <section class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg overflow-hidden">
-                <div class="p-5 border-b border-slate-700 bg-slate-800/50">
-                    <h2 class="text-lg font-bold text-slate-100">Live Synchronized Cards Ledger</h2>
-                    <p class="text-xs text-slate-400">Updates sync in real-time to your secure cloud instance</p>
+                <div class="p-4 sm:p-5 border-b border-slate-700 bg-slate-800/50">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-100">Synchronized Cards Matrix Ledger</h2>
+                    <p class="text-xs text-slate-400">Sorted automatically by nearest due date. Fully mobile responsive.</p>
                 </div>
-                <div class="overflow-x-auto">
+
+                <!-- Desktop Table View (Hidden on mobile) -->
+                <div class="overflow-x-auto hidden md:block">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-slate-700 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-900/40">
@@ -95,66 +107,76 @@
                                 <th class="py-3.5 px-4 text-center">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="matrix-body" class="divide-y divide-slate-700/60 font-mono text-sm">
-                            </tbody>
+                        <tbody id="desktop-matrix-body" class="divide-y divide-slate-700/60 font-mono text-sm">
+                            <!-- Populated dynamically -->
+                        </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Responsive Grid View (Hidden on desktop) -->
+                <div id="mobile-matrix-container" class="block md:hidden p-3 space-y-3 divide-y divide-slate-700/40">
+                    <!-- Populated dynamically -->
                 </div>
             </section>
 
+            <!-- Management Form Blocks Split Layout -->
             <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-md lg:col-span-2">
+                <!-- Modify Card Form Component -->
+                <div class="bg-slate-800 border border-slate-700 p-4 sm:p-5 rounded-xl shadow-md lg:col-span-2">
                     <h3 class="text-sm font-bold text-slate-200 mb-3 uppercase tracking-wider">Modify Selected Card Values</h3>
                     <form id="modify-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1 font-sans">Select Target Card</label>
-                            <select id="mod-id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none">
-                                </select>
+                            <select id="mod-id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none">
+                                <!-- Filled dynamically -->
+                            </select>
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1 font-sans">Due Date</label>
-                            <input type="date" id="mod-date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 focus:outline-none">
+                            <input type="date" id="mod-date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1 font-sans">Actual Balance (₹)</label>
-                            <input type="number" id="mod-actual" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                            <input type="number" id="mod-actual" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2.5 text-slate-100 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1 font-sans">Statement Due Amount (₹)</label>
-                            <input type="number" id="mod-due" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                            <input type="number" id="mod-due" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2.5 text-slate-100 focus:outline-none">
                         </div>
                         <div class="sm:col-span-2 flex justify-between items-center pt-2">
                             <button type="button" onclick="deleteCard()" class="text-xs text-red-400 hover:text-red-300 font-sans cursor-pointer">Delete Card From Cloud</button>
-                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-sans font-medium px-4 py-2 rounded-lg cursor-pointer transition shadow">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-sans font-medium px-4 py-2.5 rounded-lg cursor-pointer transition shadow">
                                 Sync Changes
                             </button>
                         </div>
                     </form>
                 </div>
 
-                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-md lg:col-span-1">
+                <!-- Add Card Form Component -->
+                <div class="bg-slate-800 border border-slate-700 p-4 sm:p-5 rounded-xl shadow-md lg:col-span-1">
                     <h3 class="text-sm font-bold text-slate-200 mb-3 uppercase tracking-wider">Add New Card Row</h3>
                     <form id="add-card-form" class="space-y-3 text-xs">
                         <div>
                             <label class="block text-slate-400 mb-1 font-sans">Card Name</label>
-                            <input type="text" id="add-name" required placeholder="e.g., Axis Horizon Card" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                            <input type="text" id="add-name" required placeholder="e.g., Axis Horizon Card" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2.5 text-slate-100 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-400 mb-1 font-sans">Limit Operational Behavior</label>
-                            <select id="add-limit-type" onchange="toggleLimitInput()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none">
+                            <select id="add-limit-type" onchange="toggleLimitInput()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none">
                                 <option value="fixed">Independent Fixed Limit</option>
                                 <option value="shared">Shared Pool Limit</option>
                             </select>
                         </div>
-                        <div id="add-limit-container">
-                            <label class="block text-slate-400 mb-1 font-sans">Credit Limit (₹)</label>
-                            <input type="number" id="add-limit" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-sans">Credit Limit / Pool Size (₹)</label>
+                            <input type="number" id="add-limit" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2.5 text-slate-100 focus:outline-none">
                         </div>
                         <div id="add-group-container" style="display: none;">
                             <label class="block text-slate-400 mb-1 font-sans">Link to Target Shared Pool Group</label>
-                            <select id="add-group-selection" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none">
-                                <option value="axis">Axis Pool (Shared ₹20k Limit)</option>
-                                <option value="icici">ICICI Pool (Shared ₹60k Limit)</option>
-                                <option value="rbl">RBL Pool (Shared ₹25k Limit)</option>
+                            <select id="add-group-selection" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2.5 text-slate-200 focus:outline-none">
+                                <option value="axis">Axis Pool Group</option>
+                                <option value="icici">ICICI Pool Group</option>
+                                <option value="rbl">RBL Pool Group</option>
                             </select>
                         </div>
                         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-sans font-medium py-2 rounded-lg cursor-pointer transition shadow">
@@ -170,14 +192,12 @@
         const SUPABASE_URL = "https://ejrcxbkgiwphousokbdr.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqcmN4YmtnaXdwaG91c29rYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1MjYwMTMsImV4cCI6MjA5ODEwMjAxM30.ByveKhtPwziYL9nS6kxEFedYZMcAJ9BkR4QpQUewQwI";
 
-        // Fixed name variable mapping to resolve browser console declaration error
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let activeUser = null;
         let accounts = [];
         let authMode = 'login';
 
-        // Manage session transitions safely using the renamed client
         supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) {
                 activeUser = session.user;
@@ -199,7 +219,6 @@
             document.getElementById('auth-toggle-btn').innerText = authMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Log In";
         }
 
-        // Form Submission with Explicit Error Popups
         document.getElementById('auth-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const email = document.getElementById('auth-email').value.trim();
@@ -213,7 +232,7 @@
                 if (error) {
                     alert("❌ Registration Failed: " + error.message);
                 } else if (data.user && data.session === null) {
-                    alert("✅ Account created! Please try switching to 'Log In' mode to access your dashboard.");
+                    alert("✅ Account created! Please switch to 'Log In' mode to access your dashboard.");
                 } else {
                     alert("✅ Registration successful! Welcome to your dashboard.");
                 }
@@ -255,7 +274,7 @@
         }
 
         function getDaysLeftMarkup(dateString, isPaid) {
-            if (isPaid) return `<span class="text-[11px] text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-900/60 font-sans ml-2">Settled</span>`;
+            if (isPaid) return `<span class="text-[11px] text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-900/60 font-sans font-medium">Settled</span>`;
             if (!dateString) return "";
             const targetDate = new Date(dateString);
             targetDate.setHours(0,0,0,0);
@@ -264,27 +283,64 @@
             const differenceMs = targetDate.getTime() - today.getTime();
             const daysLeft = Math.ceil(differenceMs / (1000 * 60 * 60 * 24));
 
-            if (daysLeft < 0) return `<span class="text-[11px] text-rose-400 bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-900/60 font-sans ml-2 font-medium">Overdue ${Math.abs(daysLeft)}d</span>`;
-            if (daysLeft === 0) return `<span class="text-[11px] text-amber-400 bg-amber-950/70 px-1.5 py-0.5 rounded border border-amber-800 animate-pulse font-sans ml-2 font-bold">Due Today</span>`;
-            if (daysLeft === 1) return `<span class="text-[11px] text-amber-400 bg-slate-900 px-1.5 py-0.5 rounded border border-amber-900/50 font-sans ml-2">Due Tomorrow</span>`;
-            return `<span class="text-[11px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700/60 font-sans ml-2">${daysLeft} days left</span>`;
+            if (daysLeft < 0) return `<span class="text-[11px] text-rose-400 bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-900/60 font-sans font-medium">Overdue ${Math.abs(daysLeft)}d</span>`;
+            if (daysLeft === 0) return `<span class="text-[11px] text-amber-400 bg-amber-950/70 px-1.5 py-0.5 rounded border border-amber-800 animate-pulse font-sans font-bold">Due Today</span>`;
+            if (daysLeft === 1) return `<span class="text-[11px] text-amber-400 bg-slate-900 px-1.5 py-0.5 rounded border border-amber-900/50 font-sans">Tomorrow</span>`;
+            return `<span class="text-[11px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700/60 font-sans">${daysLeft} days left</span>`;
+        }
+
+        function computeDaysLeftValue(dateString, isPaid) {
+            if (isPaid) return 99999; 
+            if (!dateString) return 99998;
+            const targetDate = new Date(dateString);
+            targetDate.setHours(0,0,0,0);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            return Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         }
 
         function toggleLimitInput() {
             const type = document.getElementById('add-limit-type').value;
-            document.getElementById('add-limit-container').style.display = type === 'shared' ? 'none' : 'block';
             document.getElementById('add-group-container').style.display = type === 'shared' ? 'block' : 'none';
         }
 
+        async function startNewBillingCycle() {
+            if (accounts.length === 0) return;
+            if (confirm("🔄 Proceed with Monthly Cycle Reset? This clears your current 'Statement Due' amounts and unlocks all Settled states so you can enter next month's bills, keeping your cards and limits safe.")) {
+                for (let card of accounts) {
+                    await supabaseClient.from('credit_cards').update({
+                        statement_due: 0,
+                        is_paid: false
+                    }).eq('id', card.id);
+                }
+                alert("✅ Ledger reset successfully for the new month!");
+                fetchCloudData();
+            }
+        }
+
         function calculateAndRender() {
-            const poolLimits = { axis: 20000, icici: 60000, rbl: 25000 };
-            accounts.forEach(a => { if(a.limitType === 'fixed') poolLimits[a.group] = a.limit; });
+            const poolLimits = {};
+            
+            // Multi-user dynamic pool extraction logic
+            accounts.forEach(a => {
+                if (a.limitType === 'fixed') {
+                    poolLimits[a.group] = a.limit;
+                } else if (a.limitType === 'shared') {
+                    if (!poolLimits[a.group] || a.limit > poolLimits[a.group]) {
+                        poolLimits[a.group] = a.limit;
+                    }
+                }
+            });
 
             const groupSpentTotals = {};
-            accounts.forEach(a => { groupSpentTotals[a.group] = (groupSpentTotals[a.group] || 0) + a.actual; });
+            accounts.forEach(a => { 
+                groupSpentTotals[a.group] = (groupSpentTotals[a.group] || 0) + a.actual; 
+            });
 
             const groupAvailablePools = {};
-            Object.keys(poolLimits).forEach(g => { groupAvailablePools[g] = Math.max(0, poolLimits[g] - (groupSpentTotals[g] || 0)); });
+            Object.keys(poolLimits).forEach(g => { 
+                groupAvailablePools[g] = Math.max(0, poolLimits[g] - (groupSpentTotals[g] || 0)); 
+            });
 
             let globalActual = 0, globalDue = 0, globalAvailable = 0;
             accounts.forEach(acc => { globalActual += acc.actual; globalDue += acc.due; });
@@ -294,8 +350,14 @@
             document.getElementById('global-due').innerText = `₹${globalDue.toLocaleString('en-IN')}`;
             document.getElementById('global-available').innerText = `₹${globalAvailable.toLocaleString('en-IN')}`;
 
-            const tbody = document.getElementById('matrix-body');
-            tbody.innerHTML = accounts.length === 0 ? `<tr><td colspan="7" class="text-center py-8 text-slate-400 font-sans">No cards added yet. Complete the form below to get started!</td></tr>` : '';
+            // Automatic chronological tracking deadline sort
+            accounts.sort((a, b) => computeDaysLeftValue(a.dueDate, a.isPaid) - computeDaysLeftValue(b.dueDate, b.isPaid));
+
+            const desktopTbody = document.getElementById('desktop-matrix-body');
+            const mobileContainer = document.getElementById('mobile-matrix-container');
+            
+            desktopTbody.innerHTML = accounts.length === 0 ? `<tr><td colspan="7" class="text-center py-8 text-slate-400 font-sans">No cards added yet. Complete the form below to begin.</td></tr>` : '';
+            mobileContainer.innerHTML = accounts.length === 0 ? `<p class="text-center py-6 text-sm text-slate-400 font-sans">No cards added yet. Complete the form below to begin.</p>` : '';
 
             const selectElement = document.getElementById('mod-id');
             const savedIndex = selectElement.selectedIndex;
@@ -308,12 +370,15 @@
                 selectElement.appendChild(option);
 
                 let availableLimit = acc.limitType === 'fixed' ? (acc.limit - acc.actual) : groupAvailablePools[acc.group];
-                let limitRuleMarkup = acc.limitType === 'fixed' ? `₹${acc.limit.toLocaleString('en-IN')}` : `<span class="text-[11px] text-indigo-400 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-900 font-sans font-medium block w-max capitalize">${acc.group} Pool</span>`;
+                let limitRuleMarkup = acc.limitType === 'fixed' 
+                    ? `₹${acc.limit.toLocaleString('en-IN')}` 
+                    : `<span class="text-[11px] text-indigo-400 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-900 font-sans font-medium block w-max capitalize">${acc.group} Pool (Limit: ₹${(poolLimits[acc.group] || 0).toLocaleString('en-IN')})</span>`;
 
-                let actionButton = acc.isPaid 
-                    ? `<button disabled class="text-xs bg-emerald-600 text-white px-3 py-1 rounded font-sans border border-emerald-500 font-medium">Settled ✓</button>`
-                    : `<button onclick="clearDue('${acc.id}')" class="text-xs bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white px-3 py-1 rounded transition border border-slate-600 hover:border-indigo-500 cursor-pointer font-sans font-medium">Paid</button>`;
+                let actionButtonHtml = acc.isPaid 
+                    ? `<button disabled class="text-xs w-full sm:w-auto bg-emerald-600 text-white px-4 py-1.5 rounded font-sans border border-emerald-500 font-medium shadow-sm">Settled ✓</button>`
+                    : `<button onclick="clearDue('${acc.id}')" class="text-xs w-full sm:w-auto bg-slate-700 hover:bg-indigo-600 text-slate-300 hover:text-white px-4 py-1.5 rounded transition border border-slate-600 hover:border-indigo-500 cursor-pointer font-sans font-medium shadow-sm">Paid</button>`;
 
+                // Render Desktop Matrix Row View
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-700/30 transition-colors";
                 tr.innerHTML = `
@@ -321,11 +386,43 @@
                     <td class="py-4 px-4 text-xs font-sans">${limitRuleMarkup}</td>
                     <td class="py-4 px-4 text-right text-slate-100 font-bold">₹${acc.actual.toLocaleString('en-IN')}</td>
                     <td class="py-4 px-4 text-right ${acc.isPaid ? 'text-slate-500 line-through' : 'text-amber-400'} font-bold">₹${acc.due.toLocaleString('en-IN')}</td>
-                    <td class="py-4 px-4 whitespace-nowrap"><span class="text-slate-300">${formatDateDisplay(acc.dueDate)}</span>${getDaysLeftMarkup(acc.dueDate, acc.isPaid)}</td>
+                    <td class="py-4 px-4 whitespace-nowrap"><span class="text-slate-300 mr-2">${formatDateDisplay(acc.dueDate)}</span>${getDaysLeftMarkup(acc.dueDate, acc.isPaid)}</td>
                     <td class="py-4 px-4 text-right text-emerald-400 font-bold">₹${availableLimit.toLocaleString('en-IN')}</td>
-                    <td class="py-4 px-4 text-center">${actionButton}</td>
+                    <td class="py-4 px-4 text-center">${actionButtonHtml}</td>
                 `;
-                tbody.appendChild(tr);
+                desktopTbody.appendChild(tr);
+
+                // Render Mobile Flex Blocks Layout View
+                const mobileCard = document.createElement('div');
+                mobileCard.className = `py-4 space-y-3 ${acc.isPaid ? 'opacity-60' : ''}`;
+                mobileCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-base font-bold text-slate-100 flex items-center gap-1.5">${acc.name}</h4>
+                            <div class="mt-1 flex items-center gap-2">${limitRuleMarkup}</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-slate-400 block">${formatDateDisplay(acc.dueDate)}</span>
+                            <div class="mt-1">${getDaysLeftMarkup(acc.dueDate, acc.isPaid)}</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 bg-slate-900/40 p-2.5 rounded-lg border border-slate-700/40 text-center font-mono">
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-sans">Actual Debt</p>
+                            <p class="text-xs font-bold text-slate-200 mt-0.5">₹${acc.actual.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-sans">Statement Due</p>
+                            <p class="text-xs font-bold ${acc.isPaid ? 'text-slate-500 line-through' : 'text-amber-400'} mt-0.5">₹${acc.due.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-sans">Available Pool</p>
+                            <p class="text-xs font-bold text-emerald-400 mt-0.5">₹${availableLimit.toLocaleString('en-IN')}</p>
+                        </div>
+                    </div>
+                    <div class="pt-1">${actionButtonHtml}</div>
+                `;
+                mobileContainer.appendChild(mobileCard);
             });
 
             if(savedIndex >= 0 && savedIndex < selectElement.options.length) selectElement.selectedIndex = savedIndex;
@@ -370,8 +467,8 @@
             const name = document.getElementById('add-name').value;
             const type = document.getElementById('add-limit-type').value;
             const groupSelection = document.getElementById('add-group-selection').value;
+            const limit = parseFloat(document.getElementById('add-limit').value) || 0;
             
-            let limit = type === 'fixed' ? (parseFloat(document.getElementById('add-limit').value) || 0) : 0;
             let targetGroup = type === 'fixed' ? "grp_" + Date.now() : groupSelection;
             
             const { error } = await supabaseClient.from('credit_cards').insert([{
