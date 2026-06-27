@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Credit Ledger Matrix Pro</title>
+    <title>Cloud Credit Matrix Platform</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Include the Supabase JS Client library via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f8fafc; }
@@ -13,57 +15,86 @@
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- Top Navigation Bar -->
-    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 sticky top-0 z-10 shadow-md">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">
-                <span>📊</span> Credit Monitor Multi-Group
-            </h1>
-            <div class="flex items-center gap-3">
-                <button onclick="undoLastAction()" id="undo-btn" disabled class="bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer disabled:cursor-not-allowed transition flex items-center gap-1">
-                    ↩️ Undo
+    <!-- Auth View Container (Login/Sign up Interface) -->
+    <div id="auth-container" class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl max-w-sm w-full space-y-6">
+            <div class="text-center space-y-2">
+                <h1 class="text-2xl font-bold text-indigo-400 flex items-center justify-center gap-2">
+                    <span>📊</span> OmniPay Cloud
+                </h1>
+                <p class="text-xs text-slate-400" id="auth-subtitle">Log in to sync your cards securely</p>
+            </div>
+            
+            <form id="auth-form" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Email Address</label>
+                    <input type="email" id="auth-email" required placeholder="you@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Password</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg cursor-pointer shadow transition duration-150 text-sm">
+                    Log In
                 </button>
-                <button onclick="resetToTemplate()" class="bg-slate-700 hover:bg-red-900/40 hover:text-red-300 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer transition">
-                    Reset to Demo
+            </form>
+
+            <div class="text-center">
+                <button onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-xs text-slate-400 hover:text-indigo-400 transition cursor-pointer">
+                    Don't have an account? Sign Up
                 </button>
-                <span class="text-xs font-mono text-slate-400 bg-slate-900/50 px-3 py-1.5 rounded-md border border-slate-700 hidden sm:inline-block" id="current-date"></span>
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- Main Workspace -->
-    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
-        
-        <!-- High-Level Financial Position Metrics -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Actual Debt</p>
-                <p class="text-3xl font-mono font-bold text-slate-100 mt-1" id="global-actual">₹0.00</p>
-            </div>
-            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
-                <p class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Immediate Due Amount</p>
-                <p class="text-3xl font-mono font-bold text-amber-400 mt-1" id="global-due">₹0.00</p>
-            </div>
-            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
-                <p class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Total Liquidity Pool</p>
-                <p class="text-3xl font-mono font-bold text-emerald-400 mt-1" id="global-available">₹0.00</p>
-            </div>
-        </section>
-
-        <!-- Dynamic Card Matrix -->
-        <section class="grid grid-cols-1 gap-6">
-            <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg overflow-hidden">
-                <div class="p-5 border-b border-slate-700 bg-slate-800/50">
-                    <h2 class="text-lg font-bold text-slate-100">Credit Card Accounts Management Matrix</h2>
-                    <p class="text-xs text-slate-400">Dynamically tracks isolated vs multiple shared bank pools with real-time countdown alerts</p>
+    <!-- Main Application View Container (Hidden before active auth session verified) -->
+    <div id="app-container" class="hidden flex-1 flex flex-col">
+        <!-- Top Navigation Bar -->
+        <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 sticky top-0 z-10 shadow-md">
+            <div class="max-w-6xl mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold text-indigo-400 flex items-center gap-2">
+                    <span>📊</span> Credit Monitor Engine
+                </h1>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-400 font-mono hidden md:inline-block" id="user-display-email"></span>
+                    <button onclick="handleLogout()" class="bg-slate-700 hover:bg-rose-900/40 text-slate-200 hover:text-rose-300 text-xs px-3 py-1.5 rounded-lg border border-slate-600 cursor-pointer transition">
+                        Log Out
+                    </button>
                 </div>
-                
+            </div>
+        </header>
+
+        <!-- Workspace Wrapper -->
+        <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
+            
+            <!-- Global Metrics Summary -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Actual Debt</p>
+                    <p class="text-3xl font-mono font-bold text-slate-100 mt-1" id="global-actual">₹0.00</p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
+                    <p class="text-xs font-semibold text-amber-400 uppercase tracking-wider">Immediate Due Amount</p>
+                    <p class="text-3xl font-mono font-bold text-amber-400 mt-1" id="global-due">₹0.00</p>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-sm">
+                    <p class="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Total Liquidity Pool</p>
+                    <p class="text-3xl font-mono font-bold text-emerald-400 mt-1" id="global-available">₹0.00</p>
+                </div>
+            </section>
+
+            <!-- Dynamic Cloud Card Matrix Table -->
+            <section class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg overflow-hidden">
+                <div class="p-5 border-b border-slate-700 bg-slate-800/50">
+                    <h2 class="text-lg font-bold text-slate-100">Live Synchronized Cards Ledger</h2>
+                    <p class="text-xs text-slate-400">Updates sync in real-time to your secure cloud instance</p>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-slate-700 text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-900/40">
-                                <th class="py-3.5 px-4">Card / Account Name</th>
-                                <th class="py-3.5 px-4">Limit Pool Rules</th>
+                                <th class="py-3.5 px-4">Card Name</th>
+                                <th class="py-3.5 px-4">Limit Configuration</th>
                                 <th class="py-3.5 px-4 text-right">Actual Outstanding</th>
                                 <th class="py-3.5 px-4 text-right">Statement Bill Due</th>
                                 <th class="py-3.5 px-4">Due Date Timeline</th>
@@ -72,122 +103,153 @@
                             </tr>
                         </thead>
                         <tbody id="matrix-body" class="divide-y divide-slate-700/60 font-mono text-sm">
-                            <!-- Injected dynamically via script engine -->
+                            <!-- Populated on data load -->
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Management Forms Split -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Quick Adjustments Form Matrix -->
-            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-md lg:col-span-2">
-                <h3 class="text-sm font-bold text-slate-200 mb-3 uppercase tracking-wider">Modify Existing Card Values</h3>
-                <form id="modify-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-sans">Select Card</label>
-                        <select id="mod-id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <!-- Filled by script -->
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-sans">Due Date</label>
-                        <input type="date" id="mod-date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-sans">Actual Balance (₹)</label>
-                        <input type="number" id="mod-actual" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-sans">Need to Pay Balance (₹)</label>
-                        <input type="number" id="mod-due" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-                    </div>
-                    <div class="sm:col-span-2 flex justify-between items-center pt-2">
-                        <button type="button" onclick="deleteCard()" class="text-xs text-red-400 hover:text-red-300 font-sans cursor-pointer">Delete Selected Card</button>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-sans font-medium px-4 py-2 rounded-lg cursor-pointer shadow transition duration-150">
-                            Update Card Data
+            <!-- Management Form Blocks Split Layout -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Modify Card Form Component -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-md lg:col-span-2">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 uppercase tracking-wider">Modify Selected Card Values</h3>
+                    <form id="modify-form" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-sans">Select Target Card</label>
+                            <select id="mod-id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none">
+                                <!-- Filled dynamically -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-sans">Due Date</label>
+                            <input type="date" id="mod-date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-sans">Actual Balance (₹)</label>
+                            <input type="number" id="mod-actual" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-sans">Statement Due Amount (₹)</label>
+                            <input type="number" id="mod-due" step="0.01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-2 flex justify-between items-center pt-2">
+                            <button type="button" onclick="deleteCard()" class="text-xs text-red-400 hover:text-red-300 font-sans cursor-pointer">Delete Card From Cloud</button>
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-sans font-medium px-4 py-2 rounded-lg cursor-pointer transition shadow">
+                                Sync Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Add Card Form Component -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-md lg:col-span-1">
+                    <h3 class="text-sm font-bold text-slate-200 mb-3 uppercase tracking-wider">Add New Card Row</h3>
+                    <form id="add-card-form" class="space-y-3 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-sans">Card Name</label>
+                            <input type="text" id="add-name" required placeholder="e.g., Axis Horizon Card" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1 font-sans">Limit Operational Behavior</label>
+                            <select id="add-limit-type" onchange="toggleLimitInput()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none">
+                                <option value="fixed">Independent Fixed Limit</option>
+                                <option value="shared">Shared Pool Limit</option>
+                            </select>
+                        </div>
+                        <div id="add-limit-container">
+                            <label class="block text-slate-400 mb-1 font-sans">Credit Limit (₹)</label>
+                            <input type="number" id="add-limit" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none">
+                        </div>
+                        <div id="add-group-container" style="display: none;">
+                            <label class="block text-slate-400 mb-1 font-sans">Link to Target Shared Pool Group</label>
+                            <select id="add-group-selection" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none">
+                                <option value="axis">Axis Pool (Shared ₹20k Limit)</option>
+                                <option value="icici">ICICI Pool (Shared ₹60k Limit)</option>
+                                <option value="rbl">RBL Pool (Shared ₹25k Limit)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-sans font-medium py-2 rounded-lg cursor-pointer transition shadow">
+                            Save to Profile
                         </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Add New Card Form -->
-            <div class="bg-slate-800 border border-slate-700 p-5 rounded-xl shadow-md lg:col-span-1">
-                <h3 class="text-sm font-bold text-slate-200 mb-3 uppercase tracking-wider">Add New Card</h3>
-                <form id="add-card-form" class="space-y-3 text-xs">
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-sans">Card Name</label>
-                        <input type="text" id="add-name" required placeholder="e.g., ICICI Coral Rupay" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-sans">Limit Rules Type</label>
-                        <select id="add-limit-type" onchange="toggleLimitInput()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="fixed">Independent Fixed Limit</option>
-                            <option value="shared">Shared Pool Limit</option>
-                        </select>
-                    </div>
-                    
-                    <div id="add-limit-container">
-                        <label class="block text-slate-400 mb-1 font-sans">Credit Limit (₹)</label>
-                        <input type="number" id="add-limit" value="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 focus:outline-none focus:border-indigo-500">
-                    </div>
-
-                    <div id="add-group-container" style="display: none;">
-                        <label class="block text-slate-400 mb-1 font-sans">Select Existing Group to Link</label>
-                        <select id="add-group-selection" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-                            <option value="axis">Axis Pool (Shared ₹20k Limit)</option>
-                            <option value="icici">ICICI Pool (Shared ₹60k Limit)</option>
-                            <option value="rbl">RBL Pool (Shared ₹25k Limit)</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-sans font-medium py-2 rounded-lg cursor-pointer shadow transition duration-150">
-                        Add to Registry
-                    </button>
-                </form>
-            </div>
-        </section>
-    </main>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
 
     <script>
-        // Set exact structural profile template state targeting 2026 dates given in prompt template
-        const TEMPLATE_ACCOUNTS = [
-            { id: "icici", name: "ICICI Amazon Pay", limitType: "fixed", limit: 60000, actual: 11184, due: 9717, dueDate: "2026-06-30", group: "icici", isPaid: false },
-            { id: "rbl", name: "RBL Duet", limitType: "fixed", limit: 25000, actual: 2732, due: 2524, dueDate: "2026-07-07", group: "rbl", isPaid: false },
-            { id: "rupay", name: "Axis Rupay / Neo", limitType: "shared", limit: 20000, actual: 16892, due: 5845, dueDate: "2026-06-30", group: "axis", isPaid: false },
-            { id: "flipkart", name: "Flipkart Axis", limitType: "shared", limit: 20000, actual: 1289, due: 496, dueDate: "2026-07-03", group: "axis", isPaid: false },
-            { id: "myzone", name: "Axis My Zone", limitType: "shared", limit: 20000, actual: 665, due: 665, dueDate: "2026-07-03", group: "axis", isPaid: false }
-        ];
+        // System connection details explicitly configured for user repository architecture
+        const SUPABASE_URL = "https://ejrcxbkgiwphousokbdr.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqcmN4YmtnaXdwaG91c29rYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1MjYwMTMsImV4cCI6MjA5ODEwMjAxM30.ByveKhtPwziYL9nS6kxEFedYZMcAJ9BkR4QpQUewQwI";
 
-        let accounts = JSON.parse(localStorage.getItem('omnipay_v5')) || JSON.parse(JSON.stringify(TEMPLATE_ACCOUNTS));
-        let historyStack = [];
+        // Initialize connection client instance securely
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        let activeUser = null;
+        let accounts = [];
+        let authMode = 'login';
 
-        function saveStateToHistory() {
-            historyStack.push(JSON.stringify(accounts));
-            if (historyStack.length > 20) historyStack.shift();
-            document.getElementById('undo-btn').disabled = false;
-        }
-
-        function undoLastAction() {
-            if (historyStack.length > 0) {
-                accounts = JSON.parse(historyStack.pop());
-                if (historyStack.length === 0) document.getElementById('undo-btn').disabled = true;
-                calculateAndRender(true);
+        // Interface Views Controller State Switcher Engine
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                activeUser = session.user;
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById('user-display-email').innerText = activeUser.email;
+                fetchCloudData();
+            } else {
+                activeUser = null;
+                document.getElementById('auth-container').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('hidden');
             }
+        });
+
+        // Authentication Interface Logic Controllers
+        function toggleAuthMode() {
+            authMode = authMode === 'login' ? 'signup' : 'login';
+            document.getElementById('auth-subtitle').innerText = authMode === 'login' ? 'Log in to sync your cards securely' : 'Create an isolated encrypted card workspace';
+            document.getElementById('auth-submit-btn').innerText = authMode === 'login' ? 'Log In' : 'Register Account';
+            document.getElementById('auth-toggle-btn').innerText = authMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Log In";
         }
 
-        function save() {
-            localStorage.setItem('omnipay_v5', JSON.stringify(accounts));
+        document.getElementById('auth-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (authMode === 'login') {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) alert("Authentication Failed: " + error.message);
+            } else {
+                const { error } = await supabase.auth.signUp({ email, password });
+                if (error) alert("Registration Failed: " + error.message);
+                else alert("Sign up successful! If email verification is active, check your email, or proceed to log in.");
+            }
+        });
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
         }
 
-        function resetToTemplate() {
-            if(confirm("Reset data to original setup numbers?")) {
-                saveStateToHistory();
-                accounts = JSON.parse(JSON.stringify(TEMPLATE_ACCOUNTS));
+        // Cloud Database Synchronizer Operations Engines
+        async function fetchCloudData() {
+            if (!activeUser) return;
+            const { data, error } = await supabase.from('credit_cards').select('*');
+            if (error) {
+                console.error(error);
+            } else {
+                accounts = data.map(d => ({
+                    id: d.id,
+                    name: d.name,
+                    limitType: d.limit_type,
+                    limit: parseFloat(d.credit_limit),
+                    actual: parseFloat(d.actual_balance),
+                    due: parseFloat(d.statement_due),
+                    dueDate: d.due_date,
+                    group: d.pool_group,
+                    isPaid: d.is_paid
+                }));
                 calculateAndRender();
             }
         }
@@ -201,32 +263,20 @@
             return `${day}-${months[date.getMonth()]}`;
         }
 
-        // Days left calculation logic engine block
         function getDaysLeftMarkup(dateString, isPaid) {
-            if (isPaid) {
-                return `<span class="text-[11px] text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-900/60 font-sans ml-2">Settled</span>`;
-            }
+            if (isPaid) return `<span class="text-[11px] text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-900/60 font-sans ml-2">Settled</span>`;
             if (!dateString) return "";
-
-            // Normalize time parameters to evaluate variations on whole days accurately
             const targetDate = new Date(dateString);
             targetDate.setHours(0,0,0,0);
-            
             const today = new Date();
             today.setHours(0,0,0,0);
-
             const differenceMs = targetDate.getTime() - today.getTime();
             const daysLeft = Math.ceil(differenceMs / (1000 * 60 * 60 * 24));
 
-            if (daysLeft < 0) {
-                return `<span class="text-[11px] text-rose-400 bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-900/60 font-sans ml-2 font-medium">Overdue ${Math.abs(daysLeft)}d</span>`;
-            } else if (daysLeft === 0) {
-                return `<span class="text-[11px] text-amber-400 bg-amber-950/70 px-1.5 py-0.5 rounded border border-amber-800 animate-pulse font-sans ml-2 font-bold">Due Today</span>`;
-            } else if (daysLeft === 1) {
-                return `<span class="text-[11px] text-amber-400 bg-slate-900 px-1.5 py-0.5 rounded border border-amber-900/50 font-sans ml-2">Due Tomorrow</span>`;
-            } else {
-                return `<span class="text-[11px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700/60 font-sans ml-2">${daysLeft} days left</span>`;
-            }
+            if (daysLeft < 0) return `<span class="text-[11px] text-rose-400 bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-900/60 font-sans ml-2 font-medium">Overdue ${Math.abs(daysLeft)}d</span>`;
+            if (daysLeft === 0) return `<span class="text-[11px] text-amber-400 bg-amber-950/70 px-1.5 py-0.5 rounded border border-amber-800 animate-pulse font-sans ml-2 font-bold">Due Today</span>`;
+            if (daysLeft === 1) return `<span class="text-[11px] text-amber-400 bg-slate-900 px-1.5 py-0.5 rounded border border-amber-900/50 font-sans ml-2">Due Tomorrow</span>`;
+            return `<span class="text-[11px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700/60 font-sans ml-2">${daysLeft} days left</span>`;
         }
 
         function toggleLimitInput() {
@@ -235,46 +285,26 @@
             document.getElementById('add-group-container').style.display = type === 'shared' ? 'block' : 'none';
         }
 
-        function calculateAndRender(skipHistorySave = false) {
-            if (!skipHistorySave) save();
-
+        function calculateAndRender() {
             const poolLimits = { axis: 20000, icici: 60000, rbl: 25000 };
-            
-            accounts.forEach(a => {
-                if(a.limitType === 'fixed') {
-                    poolLimits[a.group] = a.limit;
-                }
-            });
+            accounts.forEach(a => { if(a.limitType === 'fixed') poolLimits[a.group] = a.limit; });
 
             const groupSpentTotals = {};
-            accounts.forEach(a => {
-                groupSpentTotals[a.group] = (groupSpentTotals[a.group] || 0) + a.actual;
-            });
+            accounts.forEach(a => { groupSpentTotals[a.group] = (groupSpentTotals[a.group] || 0) + a.actual; });
 
             const groupAvailablePools = {};
-            Object.keys(poolLimits).forEach(g => {
-                groupAvailablePools[g] = Math.max(0, poolLimits[g] - (groupSpentTotals[g] || 0));
-            });
+            Object.keys(poolLimits).forEach(g => { groupAvailablePools[g] = Math.max(0, poolLimits[g] - (groupSpentTotals[g] || 0)); });
 
-            let globalActual = 0;
-            let globalDue = 0;
-            let globalAvailable = 0;
-
-            accounts.forEach(acc => {
-                globalActual += acc.actual;
-                globalDue += acc.due;
-            });
-
-            Object.keys(groupAvailablePools).forEach(g => {
-                globalAvailable += groupAvailablePools[g];
-            });
+            let globalActual = 0, globalDue = 0, globalAvailable = 0;
+            accounts.forEach(acc => { globalActual += acc.actual; globalDue += acc.due; });
+            Object.keys(groupAvailablePools).forEach(g => { globalAvailable += groupAvailablePools[g]; });
 
             document.getElementById('global-actual').innerText = `₹${globalActual.toLocaleString('en-IN')}`;
             document.getElementById('global-due').innerText = `₹${globalDue.toLocaleString('en-IN')}`;
             document.getElementById('global-available').innerText = `₹${globalAvailable.toLocaleString('en-IN')}`;
 
             const tbody = document.getElementById('matrix-body');
-            tbody.innerHTML = '';
+            tbody.innerHTML = accounts.length === 0 ? `<tr><td colspan="7" class="text-center py-8 text-slate-400 font-sans">No cards added yet. Complete the form below to get started!</td></tr>` : '';
 
             const selectElement = document.getElementById('mod-id');
             const savedIndex = selectElement.selectedIndex;
@@ -287,19 +317,7 @@
                 selectElement.appendChild(option);
 
                 let availableLimit = acc.limitType === 'fixed' ? (acc.limit - acc.actual) : groupAvailablePools[acc.group];
-                let limitRuleMarkup = "";
-
-                if (acc.limitType === 'fixed') {
-                    const structuralShares = accounts.filter(a => a.group === acc.group);
-                    if (structuralShares.length > 1) {
-                        limitRuleMarkup = `₹${acc.limit.toLocaleString('en-IN')} <span class="text-[10px] text-blue-400 bg-blue-950/80 px-1.5 py-0.5 rounded border border-blue-900 font-sans block mt-0.5 w-max">Shared Parent</span>`;
-                    } else {
-                        limitRuleMarkup = `₹${acc.limit.toLocaleString('en-IN')}`;
-                    }
-                } else {
-                    const labelColor = acc.group === 'axis' ? 'indigo' : 'teal';
-                    limitRuleMarkup = `<span class="text-[11px] text-${labelColor}-400 bg-${labelColor}-950/80 px-1.5 py-0.5 rounded border border-${labelColor}-900 font-sans font-medium block w-max capitalize">${acc.group} Pool</span>`;
-                }
+                let limitRuleMarkup = acc.limitType === 'fixed' ? `₹${acc.limit.toLocaleString('en-IN')}` : `<span class="text-[11px] text-indigo-400 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-900 font-sans font-medium block w-max capitalize">${acc.group} Pool</span>`;
 
                 let actionButton = acc.isPaid 
                     ? `<button disabled class="text-xs bg-emerald-600 text-white px-3 py-1 rounded font-sans border border-emerald-500 font-medium">Settled ✓</button>`
@@ -312,19 +330,14 @@
                     <td class="py-4 px-4 text-xs font-sans">${limitRuleMarkup}</td>
                     <td class="py-4 px-4 text-right text-slate-100 font-bold">₹${acc.actual.toLocaleString('en-IN')}</td>
                     <td class="py-4 px-4 text-right ${acc.isPaid ? 'text-slate-500 line-through' : 'text-amber-400'} font-bold">₹${acc.due.toLocaleString('en-IN')}</td>
-                    <td class="py-4 px-4 whitespace-nowrap">
-                        <span class="text-slate-300">${formatDateDisplay(acc.dueDate)}</span>
-                        ${getDaysLeftMarkup(acc.dueDate, acc.isPaid)}
-                    </td>
+                    <td class="py-4 px-4 whitespace-nowrap"><span class="text-slate-300">${formatDateDisplay(acc.dueDate)}</span>${getDaysLeftMarkup(acc.dueDate, acc.isPaid)}</td>
                     <td class="py-4 px-4 text-right text-emerald-400 font-bold">₹${availableLimit.toLocaleString('en-IN')}</td>
                     <td class="py-4 px-4 text-center">${actionButton}</td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            if(savedIndex >= 0 && savedIndex < selectElement.options.length) {
-                selectElement.selectedIndex = savedIndex;
-            }
+            if(savedIndex >= 0 && savedIndex < selectElement.options.length) selectElement.selectedIndex = savedIndex;
             updateFormInputs();
         }
 
@@ -340,78 +353,78 @@
 
         document.getElementById('mod-id').addEventListener('change', updateFormInputs);
 
-        document.getElementById('modify-form').addEventListener('submit', function(e) {
+        document.getElementById('modify-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            saveStateToHistory();
+            if(!activeUser) return;
             const id = document.getElementById('mod-id').value;
             const acc = accounts.find(a => a.id === id);
             if(acc) {
-                acc.actual = parseFloat(document.getElementById('mod-actual').value) || 0;
-                acc.due = parseFloat(document.getElementById('mod-due').value) || 0;
-                acc.dueDate = document.getElementById('mod-date').value;
-                acc.isPaid = acc.due > 0 ? false : acc.isPaid; 
-                calculateAndRender();
+                const actual = parseFloat(document.getElementById('mod-actual').value) || 0;
+                const due = parseFloat(document.getElementById('mod-due').value) || 0;
+                const dueDate = document.getElementById('mod-date').value;
+                const isPaid = due > 0 ? false : acc.isPaid;
+
+                const { error } = await supabase.from('credit_cards').update({
+                    actual_balance: actual, statement_due: due, due_date: dueDate, is_paid: isPaid
+                }).eq('id', id);
+
+                if (error) alert("Sync error: " + error.message);
+                else fetchCloudData();
             }
         });
 
-        document.getElementById('add-card-form').addEventListener('submit', function(e) {
+        document.getElementById('add-card-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            saveStateToHistory();
+            if(!activeUser) return;
             const name = document.getElementById('add-name').value;
             const type = document.getElementById('add-limit-type').value;
             const groupSelection = document.getElementById('add-group-selection').value;
             
-            let limit = 0;
-            let targetGroup = "none";
-
-            if (type === 'fixed') {
-                limit = parseFloat(document.getElementById('add-limit').value) || 0;
-                targetGroup = "grp_" + Date.now();
-            } else {
-                limit = 0; 
-                targetGroup = groupSelection;
-            }
+            let limit = type === 'fixed' ? (parseFloat(document.getElementById('add-limit').value) || 0) : 0;
+            let targetGroup = type === 'fixed' ? "grp_" + Date.now() : groupSelection;
             
-            const newCard = {
+            const { error } = await supabase.from('credit_cards').insert([{
                 id: "card_" + Date.now(),
+                user_id: activeUser.id,
                 name: name,
-                limitType: type,
-                limit: limit,
-                actual: 0,
-                due: 0,
-                dueDate: new Date().toISOString().split('T')[0],
-                group: targetGroup,
-                isPaid: false
-            };
+                limit_type: type,
+                credit_limit: limit,
+                actual_balance: 0,
+                statement_due: 0,
+                due_date: new Date().toISOString().split('T')[0],
+                pool_group: targetGroup,
+                is_paid: false
+            }]);
 
-            accounts.push(newCard);
-            this.reset();
-            toggleLimitInput();
-            calculateAndRender();
+            if (error) alert("Failed to add card: " + error.message);
+            else {
+                this.reset();
+                toggleLimitInput();
+                fetchCloudData();
+            }
         });
 
-        function deleteCard() {
+        async function deleteCard() {
             const id = document.getElementById('mod-id').value;
-            const acc = accounts.find(a => a.id === id);
-            if(acc && confirm(`Are you sure you want to delete ${acc.name}?`)) {
-                saveStateToHistory();
-                accounts = accounts.filter(a => a.id !== id);
-                calculateAndRender();
+            if(id && confirm("Delete this card permanently from the cloud?")) {
+                const { error } = await supabase.from('credit_cards').delete().eq('id', id);
+                if (error) alert("Error deleting card: " + error.message);
+                else fetchCloudData();
             }
         }
 
-        function clearDue(id) {
-            saveStateToHistory();
+        async function clearDue(id) {
             const acc = accounts.find(a => a.id === id);
             if(acc) {
-                acc.actual = Math.max(0, acc.actual - acc.due);
-                acc.due = 0;
-                acc.isPaid = true;
-                calculateAndRender();
+                const targetActual = Math.max(0, acc.actual - acc.due);
+                const { error } = await supabase.from('credit_cards').update({
+                    actual_balance: targetActual, statement_due: 0, is_paid: true
+                }).eq('id', id);
+                
+                if (error) alert("Update error: " + error.message);
+                else fetchCloudData();
             }
         }
-
-        calculateAndRender(true);
     </script>
 </body>
 </html>
