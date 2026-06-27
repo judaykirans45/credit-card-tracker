@@ -170,15 +170,15 @@
         const SUPABASE_URL = "https://ejrcxbkgiwphousokbdr.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqcmN4YmtnaXdwaG91c29rYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1MjYwMTMsImV4cCI6MjA5ODEwMjAxM30.ByveKhtPwziYL9nS6kxEFedYZMcAJ9BkR4QpQUewQwI";
 
-        // Initialize Supabase client
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Fixed name variable mapping to resolve browser console declaration error
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let activeUser = null;
         let accounts = [];
         let authMode = 'login';
 
-        // Manage session transitions
-        supabase.auth.onAuthStateChange((event, session) => {
+        // Manage session transitions safely using the renamed client
+        supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) {
                 activeUser = session.user;
                 document.getElementById('auth-container').classList.add('hidden');
@@ -206,10 +206,10 @@
             const password = document.getElementById('auth-password').value;
 
             if (authMode === 'login') {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) alert("❌ Login Failed: " + error.message);
             } else {
-                const { data, error } = await supabase.auth.signUp({ email, password });
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
                 if (error) {
                     alert("❌ Registration Failed: " + error.message);
                 } else if (data.user && data.session === null) {
@@ -221,12 +221,12 @@
         });
 
         async function handleLogout() {
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
         }
 
         async function fetchCloudData() {
             if (!activeUser) return;
-            const { data, error } = await supabase.from('credit_cards').select('*');
+            const { data, error } = await supabaseClient.from('credit_cards').select('*');
             if (error) {
                 console.error("Fetch error:", error);
             } else {
@@ -355,7 +355,7 @@
                 const dueDate = document.getElementById('mod-date').value;
                 const isPaid = due > 0 ? false : acc.isPaid;
 
-                const { error } = await supabase.from('credit_cards').update({
+                const { error } = await supabaseClient.from('credit_cards').update({
                     actual_balance: actual, statement_due: due, due_date: dueDate, is_paid: isPaid
                 }).eq('id', id);
 
@@ -374,7 +374,7 @@
             let limit = type === 'fixed' ? (parseFloat(document.getElementById('add-limit').value) || 0) : 0;
             let targetGroup = type === 'fixed' ? "grp_" + Date.now() : groupSelection;
             
-            const { error } = await supabase.from('credit_cards').insert([{
+            const { error } = await supabaseClient.from('credit_cards').insert([{
                 id: "card_" + Date.now(),
                 user_id: activeUser.id,
                 name: name,
@@ -398,7 +398,7 @@
         async function deleteCard() {
             const id = document.getElementById('mod-id').value;
             if(id && confirm("Delete this card permanently from the cloud?")) {
-                const { error } = await supabase.from('credit_cards').delete().eq('id', id);
+                const { error } = await supabaseClient.from('credit_cards').delete().eq('id', id);
                 if (error) alert("Error deleting card: " + error.message);
                 else fetchCloudData();
             }
@@ -408,7 +408,7 @@
             const acc = accounts.find(a => a.id === id);
             if(acc) {
                 const targetActual = Math.max(0, acc.actual - acc.due);
-                const { error } = await supabase.from('credit_cards').update({
+                const { error } = await supabaseClient.from('credit_cards').update({
                     actual_balance: targetActual, statement_due: 0, is_paid: true
                 }).eq('id', id);
                 
