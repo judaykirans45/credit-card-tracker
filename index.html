@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Credit Matrix Platform</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Include the Supabase JS Client library via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -20,7 +19,7 @@
         <div class="bg-slate-800 border border-slate-700 p-6 sm:p-8 rounded-2xl shadow-xl max-w-sm w-full space-y-6">
             <div class="text-center space-y-2">
                 <h1 class="text-2xl font-bold text-indigo-400 flex items-center justify-center gap-2">
-                    <span>📊</span> OmniPay Cloud
+                    <span>📊</span> Credit Pay Manager
                 </h1>
                 <p class="text-xs text-slate-400" id="auth-subtitle">Log in to sync your cards securely</p>
             </div>
@@ -49,16 +48,28 @@
 
     <!-- Main Application View Container -->
     <div id="app-container" class="hidden flex-1 flex flex-col">
-        <!-- Top Navigation Bar -->
+        <!-- Top Navigation Bar (With Perfect Width Alignment Rules) -->
         <header class="bg-slate-800 border-b border-slate-700 py-4 px-4 sm:px-6 sticky top-0 z-10 shadow-md">
-            <div class="max-w-6xl mx-auto flex justify-between items-center">
-                <h1 class="text-lg sm:text-xl font-bold text-indigo-400 flex items-center gap-2">
-                    <span>📊</span> OmniPay Engine
+            <div class="max-w-6xl w-full mx-auto flex justify-between items-center">
+                <h1 class="text-lg sm:text-xl font-bold text-indigo-400 flex items-center gap-2 select-none">
+                    <span>📊</span> Pay Engine
                 </h1>
+                
                 <div class="flex items-center gap-2 sm:gap-3">
-                    <span class="text-xs text-slate-400 font-mono hidden md:inline-block" id="user-display-email"></span>
-                    <button onclick="startNewBillingCycle()" class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 text-xs px-2.5 py-1.5 rounded-lg cursor-pointer transition flex items-center gap-1 font-medium">
-                        🔄 New Month Reset
+                    <!-- Dynamic Undo/Redo Engine Triggers -->
+                    <div class="flex items-center bg-slate-900/60 p-1 rounded-lg border border-slate-700/50 mr-1 sm:mr-2">
+                        <button id="undo-btn" onclick="executeUndo()" disabled title="Undo Last Change" class="text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed hover:text-indigo-400 px-2 py-1 text-xs font-sans font-bold transition cursor-pointer">
+                            ⤺ Undo
+                        </button>
+                        <div class="w-[1px] h-4 bg-slate-700 mx-1"></div>
+                        <button id="redo-btn" onclick="executeRedo()" disabled title="Redo Last Change" class="text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed hover:text-indigo-400 px-2 py-1 text-xs font-sans font-bold transition cursor-pointer">
+                            Redo ⤻
+                        </button>
+                    </div>
+
+                    <span class="text-xs text-slate-400 font-mono hidden lg:inline-block" id="user-display-email"></span>
+                    <button onclick="startNewBillingCycle()" class="bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 text-xs px-2.5 py-1.5 rounded-lg cursor-pointer transition flex items-center gap-1 font-medium shadow-sm">
+                        🔄 Reset Month
                     </button>
                     <button onclick="handleLogout()" class="bg-slate-700 hover:bg-rose-900/40 text-slate-200 hover:text-rose-300 text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 cursor-pointer transition">
                         Log Out
@@ -67,8 +78,8 @@
             </div>
         </header>
 
-        <!-- Workspace Wrapper -->
-        <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 space-y-6">
+        <!-- Workspace Wrapper (Perfect Grid Container Matching Navigation Matrix Layouts) -->
+        <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
             
             <!-- Global Metrics Summary -->
             <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -86,14 +97,14 @@
                 </div>
             </section>
 
-            <!-- Dynamic Master Ledger Section -->
+            <!-- Dynamic Master Display Area -->
             <section class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg overflow-hidden">
                 <div class="p-4 sm:p-5 border-b border-slate-700 bg-slate-800/50">
                     <h2 class="text-base sm:text-lg font-bold text-slate-100">Synchronized Cards Matrix Ledger</h2>
                     <p class="text-xs text-slate-400">Sorted automatically by nearest due date. Fully mobile responsive.</p>
                 </div>
 
-                <!-- Desktop Table View (Hidden on mobile) -->
+                <!-- Desktop Table View Block (Hidden on mobile phones) -->
                 <div class="overflow-x-auto hidden md:block">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -108,14 +119,14 @@
                             </tr>
                         </thead>
                         <tbody id="desktop-matrix-body" class="divide-y divide-slate-700/60 font-mono text-sm">
-                            <!-- Populated dynamically -->
+                            <!-- Dynamic Content -->
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Mobile Responsive Grid View (Hidden on desktop) -->
+                <!-- Mobile Responsive Grid System Cards View (Hidden on desktop monitors) -->
                 <div id="mobile-matrix-container" class="block md:hidden p-3 space-y-3 divide-y divide-slate-700/40">
-                    <!-- Populated dynamically -->
+                    <!-- Dynamic Mobile Interface Cards -->
                 </div>
             </section>
 
@@ -198,6 +209,10 @@
         let accounts = [];
         let authMode = 'login';
 
+        // Undo and Redo State Engine Stacks
+        let undoStack = [];
+        let redoStack = [];
+
         supabaseClient.auth.onAuthStateChange((event, session) => {
             if (session) {
                 activeUser = session.user;
@@ -243,7 +258,7 @@
             await supabaseClient.auth.signOut();
         }
 
-        async function fetchCloudData() {
+        async function fetchCloudData(bypassStackClear = false) {
             if (!activeUser) return;
             const { data, error } = await supabaseClient.from('credit_cards').select('*');
             if (error) {
@@ -260,7 +275,95 @@
                     group: d.pool_group,
                     isPaid: d.is_paid
                 }));
+                
+                // Clear state memory on manual structural refreshes unless executing a historical stack hop
+                if (!bypassStackClear) {
+                    undoStack = [];
+                    redoStack = [];
+                    updateUndoRedoButtons();
+                }
+                
                 calculateAndRender();
+            }
+        }
+
+        // Save transactional snapshots before cloud mutational updates are applied
+        function saveToUndoStack(previousState) {
+            undoStack.push({
+                cardId: previousState.id,
+                actual: previousState.actual,
+                due: previousState.due,
+                dueDate: previousState.dueDate,
+                isPaid: previousState.isPaid
+            });
+            redoStack = []; // Reset forward track whenever a fresh direct user mutation initiates
+            updateUndoRedoButtons();
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('undo-btn');
+            const redoBtn = document.getElementById('redo-btn');
+            
+            undoBtn.disabled = undoStack.length === 0;
+            undoBtn.className = undoStack.length === 0 
+                ? "text-slate-600 opacity-40 cursor-not-allowed px-2 py-1 text-xs font-sans font-bold"
+                : "text-indigo-400 hover:text-indigo-300 px-2 py-1 text-xs font-sans font-bold cursor-pointer transition";
+
+            redoBtn.disabled = redoStack.length === 0;
+            redoBtn.className = redoStack.length === 0 
+                ? "text-slate-600 opacity-40 cursor-not-allowed px-2 py-1 text-xs font-sans font-bold"
+                : "text-indigo-400 hover:text-indigo-300 px-2 py-1 text-xs font-sans font-bold cursor-pointer transition";
+        }
+
+        async function executeUndo() {
+            if (undoStack.length === 0) return;
+            const lastAction = undoStack.pop();
+            const currentLiveCard = accounts.find(a => a.id === lastAction.cardId);
+            
+            if (currentLiveCard) {
+                redoStack.push({
+                    cardId: currentLiveCard.id,
+                    actual: currentLiveCard.actual,
+                    due: currentLiveCard.due,
+                    dueDate: currentLiveCard.dueDate,
+                    isPaid: currentLiveCard.isPaid
+                });
+
+                await supabaseClient.from('credit_cards').update({
+                    actual_balance: lastAction.actual,
+                    statement_due: lastAction.due,
+                    due_date: lastAction.dueDate,
+                    is_paid: lastAction.isPaid
+                }).eq('id', lastAction.cardId);
+
+                updateUndoRedoButtons();
+                fetchCloudData(true);
+            }
+        }
+
+        async function executeRedo() {
+            if (redoStack.length === 0) return;
+            const nextAction = redoStack.pop();
+            const currentLiveCard = accounts.find(a => a.id === nextAction.cardId);
+
+            if (currentLiveCard) {
+                undoStack.push({
+                    cardId: currentLiveCard.id,
+                    actual: currentLiveCard.actual,
+                    due: currentLiveCard.due,
+                    dueDate: currentLiveCard.dueDate,
+                    isPaid: currentLiveCard.isPaid
+                });
+
+                await supabaseClient.from('credit_cards').update({
+                    actual_balance: nextAction.actual,
+                    statement_due: nextAction.due,
+                    due_date: nextAction.dueDate,
+                    is_paid: nextAction.isPaid
+                }).eq('id', nextAction.cardId);
+
+                updateUndoRedoButtons();
+                fetchCloudData(true);
             }
         }
 
@@ -321,7 +424,6 @@
         function calculateAndRender() {
             const poolLimits = {};
             
-            // Multi-user dynamic pool extraction logic
             accounts.forEach(a => {
                 if (a.limitType === 'fixed') {
                     poolLimits[a.group] = a.limit;
@@ -350,7 +452,6 @@
             document.getElementById('global-due').innerText = `₹${globalDue.toLocaleString('en-IN')}`;
             document.getElementById('global-available').innerText = `₹${globalAvailable.toLocaleString('en-IN')}`;
 
-            // Automatic chronological tracking deadline sort
             accounts.sort((a, b) => computeDaysLeftValue(a.dueDate, a.isPaid) - computeDaysLeftValue(b.dueDate, b.isPaid));
 
             const desktopTbody = document.getElementById('desktop-matrix-body');
@@ -447,6 +548,7 @@
             const id = document.getElementById('mod-id').value;
             const acc = accounts.find(a => a.id === id);
             if(acc) {
+                saveToUndoStack(acc);
                 const actual = parseFloat(document.getElementById('mod-actual').value) || 0;
                 const due = parseFloat(document.getElementById('mod-due').value) || 0;
                 const dueDate = document.getElementById('mod-date').value;
@@ -457,7 +559,7 @@
                 }).eq('id', id);
 
                 if (error) alert("Sync error: " + error.message);
-                else fetchCloudData();
+                else fetchCloudData(true);
             }
         });
 
@@ -504,13 +606,14 @@
         async function clearDue(id) {
             const acc = accounts.find(a => a.id === id);
             if(acc) {
+                saveToUndoStack(acc);
                 const targetActual = Math.max(0, acc.actual - acc.due);
                 const { error } = await supabaseClient.from('credit_cards').update({
                     actual_balance: targetActual, statement_due: 0, is_paid: true
                 }).eq('id', id);
                 
                 if (error) alert("Update error: " + error.message);
-                else fetchCloudData();
+                else fetchCloudData(true);
             }
         }
     </script>
